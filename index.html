@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multiplayer Car Game</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        <div id="scoreboard"></div>
+        <div id="playerInfo">Ваш ID: <span id="playerId"></span></div>
+        <div class="controls">
+            Управление: WASD или стрелки<br>
+            Цель: собирайте золотые звёзды
+        </div>
+    </div>
+
+    <script>
+        // Game elements
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreboard = document.getElementById('scoreboard');
+        const playerIdDisplay = document.getElementById('playerId');
+        
+        // Game state
+        let gameState = { cars: [], stars: [], scores: {} };
+        let myPlayerId;
+        
+        // Network
+        const socket = new WebSocket('ws://localhost:8080');
+
+        // Rendering
+        function render() {
+            ctx.clearRect(0, 0, 800, 600);
+            
+            // Draw stars
+            gameState.stars.forEach(star => {
+                drawStar(star.x, star.y);
+            });
+
+            // Draw cars
+            gameState.cars.forEach(car => {
+                drawCar(car.x, car.y, car.color, car.speedX, car.speedY);
+            });
+
+            updateScoreboard();
+            requestAnimationFrame(render);
+        }
+
+        function drawStar(x, y) {
+            ctx.fillStyle = 'gold';
+            ctx.beginPath();
+            ctx.arc(x, y, 10, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = 'orange';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+
+        function drawCar(x, y, color, speedX, speedY) {
+            ctx.save();
+            ctx.translate(x + 15, y + 10);
+            
+            // Calculate rotation angle
+            const angle = Math.atan2(speedY, speedX);
+            ctx.rotate(angle);
+            
+            // Car body
+            ctx.fillStyle = color;
+            ctx.fillRect(-15, -10, 30, 20);
+            
+            // Windows
+            ctx.fillStyle = 'rgba(200, 200, 255, 0.5)';
+            ctx.fillRect(5, -8, 15, 5);
+            ctx.fillRect(5, 3, 15, 5);
+            
+            ctx.restore();
+        }
+
+        function updateScoreboard() {
+            let scoreHTML = '<h3>Счет игроков</h3>';
+            const sortedScores = Object.entries(gameState.scores)
+                .sort((a, b) => b[1] - a[1]);
+            
+            sortedScores.forEach(([id, score]) => {
+                const player = gameState.cars.find(c => c.id === id);
+                const color = player ? player.color : 'gray';
+                const isCurrentPlayer = id === myPlayerId ? 'font-weight: bold;' : '';
+                scoreHTML += `<p style="color:${color};${isCurrentPlayer}">${id.substr(0, 6)}: ${score}</p>`;
+            });
+            
+            scoreboard.innerHTML = scoreHTML;
+        }
+
+        // Input handling
+        const keys = {};
+        document.addEventListener('keydown', (e) => {
+            keys[e.key] = true;
+            sendInput();
+        });
+        
+        document.addEventListener('keyup', (e) => {
+            keys[e.key] = false;
+            sendInput();
+        });
+
+        function sendInput() {
+            const input = { x: 0, y: 0 };
+            if (keys['ArrowUp'] || keys['w']) input.y = -1;
+            if (keys['ArrowDown'] || keys['s']) input.y = 1;
+            if (keys['ArrowLeft'] || keys['a']) input.x = -1;
+            if (keys['ArrowRight'] || keys['d']) input.x = 1;
+            
+            socket.send(JSON.stringify({ 
+                type: 'input', 
+                input 
+            }));
+        }
+
+        // Network communication
+        socket.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            
+            if (data.type === 'init') {
+                myPlayerId = data.playerId;
+                playerIdDisplay.textContent = myPlayerId.substr(0, 6);
+            }
+            
+            gameState = data.gameState;
+        };
+
+        // Start the game
+        render();
+    </script>
+</body>
+</html>
