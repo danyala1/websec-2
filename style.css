@@ -1,30 +1,44 @@
 :root {
+  /* Цветовая схема */
   --primary-bg: #1a1a2e;
   --secondary-bg: #16213e;
-  --accent-color: #ff9f1c;
-  --text-light: #e6f7ff;
-  --text-dark: #333;
-  --car-size: 30px;
-  --star-size: 12px;
+  --accent-1: #ff9f1c;
+  --accent-2: #2ec4b6;
+  --danger: #e71d36;
+  --text-light: #f8f9fa;
+  --text-dark: #212529;
+  
+  /* Размеры */
+  --car-width: 30px;
+  --car-height: 20px;
+  --star-size: 14px;
+  --powerup-size: 18px;
+  
+  /* Тени */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.15);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.25);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.33);
 }
 
-/* Базовые стили */
+/* Базовый сброс и типографика */
 * {
-  box-sizing: border-box;
   margin: 0;
   padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
   background-color: var(--primary-bg);
   color: var(--text-light);
   overflow: hidden;
   height: 100vh;
   touch-action: manipulation;
+  user-select: none;
 }
 
-/* Контейнер игры */
+/* Контейнер игры с градиентным фоном */
 #gameContainer {
   position: relative;
   width: 100%;
@@ -32,147 +46,214 @@ body {
   height: 100vh;
   max-height: 600px;
   margin: 0 auto;
-  background: linear-gradient(135deg, var(--primary-bg), var(--secondary-bg));
+  background: radial-gradient(ellipse at center, 
+              var(--primary-bg) 0%, 
+              var(--secondary-bg) 100%);
   overflow: hidden;
-  box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
 }
 
-/* Игровое поле */
+/* Холст с эффектом "звездного неба" */
 #gameCanvas {
   display: block;
   width: 100%;
   height: 100%;
-  background: radial-gradient(circle at center, #2d3436, #1a1a2e);
+  background: 
+    radial-gradient(circle at 20% 30%, 
+      rgba(255, 255, 255, 0.05) 0%, 
+      transparent 50%),
+    radial-gradient(circle at 80% 70%, 
+      rgba(255, 255, 255, 0.05) 0%, 
+      transparent 50%);
 }
 
-/* Панель счета */
-#scoreboard {
+/* Стили для игровых элементов */
+.car {
   position: absolute;
-  top: 15px;
-  left: 15px;
-  background: rgba(26, 42, 68, 0.85);
-  backdrop-filter: blur(5px);
-  padding: 12px 15px;
-  border-radius: 12px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-  min-width: 150px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  width: var(--car-width);
+  height: var(--car-height);
+  border-radius: 4px;
+  transition: transform 0.1s ease-out;
+  filter: 
+    drop-shadow(0 0 5px currentColor)
+    drop-shadow(0 0 10px rgba(255, 255, 255, 0.3));
   z-index: 10;
 }
 
-#scoreboard h3 {
-  margin: 0 0 10px 0;
-  color: var(--accent-color);
-  font-size: 1.1rem;
-  border-bottom: 1px solid rgba(255, 159, 28, 0.3);
-  padding-bottom: 5px;
+.car::after {
+  content: '';
+  position: absolute;
+  bottom: -3px;
+  left: 50%;
+  width: 60%;
+  height: 3px;
+  background: rgba(255, 159, 28, 0.7);
+  border-radius: 50%;
+  transform: translateX(-50%);
+  filter: blur(2px);
+  animation: engineGlow 0.8s infinite alternate;
 }
 
-#scoreboard p {
-  margin: 5px 0;
-  font-size: 0.9rem;
+@keyframes engineGlow {
+  0% { opacity: 0.7; width: 60%; }
+  100% { opacity: 1; width: 80%; }
+}
+
+.star {
+  position: absolute;
+  width: var(--star-size);
+  height: var(--star-size);
+  background: gold;
+  border-radius: 50%;
+  filter: 
+    drop-shadow(0 0 8px gold)
+    drop-shadow(0 0 12px rgba(255, 215, 0, 0.5));
+  animation: pulse 2s infinite ease-in-out;
+  z-index: 5;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.2); opacity: 0.8; }
+}
+
+.powerup {
+  position: absolute;
+  width: var(--powerup-size);
+  height: var(--powerup-size);
+  border-radius: 50%;
+  filter: drop-shadow(0 0 6px currentColor);
+  animation: float 3s infinite ease-in-out;
+  z-index: 5;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+/* Панель счета с эффектом стекла */
+#scoreboard {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background: rgba(26, 42, 68, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  padding: 12px 16px;
+  border-radius: 12px;
+  box-shadow: var(--shadow-md);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  z-index: 100;
+  max-width: 180px;
+}
+
+#scoreboard h3 {
+  margin: 0 0 8px 0;
+  color: var(--accent-1);
+  font-size: 1rem;
+  font-weight: 600;
+  border-bottom: 1px solid rgba(255, 159, 28, 0.3);
+  padding-bottom: 6px;
+}
+
+.player-score {
   display: flex;
   justify-content: space-between;
+  align-items: center;
+  margin: 6px 0;
+  font-size: 0.85rem;
 }
 
-/* Инфо панель игрока */
-#playerInfo {
-  position: absolute;
-  bottom: 15px;
-  left: 15px;
-  background: rgba(26, 42, 68, 0.85);
-  backdrop-filter: blur(5px);
-  padding: 10px 15px;
-  border-radius: 12px;
-  font-size: 0.8rem;
-  color: var(--text-light);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+.player-score .name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100px;
 }
 
-/* Кнопки управления для мобильных */
+.player-score .score {
+  font-weight: 700;
+  color: var(--accent-2);
+}
+
+/* Мобильное управление */
 #mobileControls {
   position: absolute;
-  bottom: 20px;
-  right: 20px;
+  bottom: 30px;
+  right: 30px;
   display: none;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
   gap: 10px;
   z-index: 100;
 }
 
 .control-btn {
-  width: 50px;
-  height: 50px;
-  background: rgba(255, 159, 28, 0.7);
+  width: 56px;
+  height: 56px;
+  background: rgba(255, 159, 28, 0.85);
+  backdrop-filter: blur(4px);
   border-radius: 50%;
   display: flex;
   justify-content: center;
   align-items: center;
   color: white;
   font-size: 1.5rem;
-  user-select: none;
+  font-weight: bold;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease;
   touch-action: none;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
 }
 
-/* Анимации */
-@keyframes pulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-  100% { transform: scale(1); }
+.control-btn:active {
+  transform: scale(0.95);
+  background: rgba(255, 159, 28, 1);
 }
 
-.pulse {
-  animation: pulse 1.5s infinite;
-}
+#upBtn { grid-column: 2; grid-row: 1; }
+#leftBtn { grid-column: 1; grid-row: 2; }
+#rightBtn { grid-column: 3; grid-row: 2; }
+#downBtn { grid-column: 2; grid-row: 3; }
 
-/* Мобильная адаптация */
-@media (max-width: 768px) {
+/* Адаптация для мобильных */
+@media (max-width: 768px), (max-height: 600px) {
+  :root {
+    --car-width: 24px;
+    --car-height: 16px;
+    --star-size: 12px;
+    --powerup-size: 16px;
+  }
+  
   #gameContainer {
     max-width: 100%;
     max-height: 100vh;
     border-radius: 0;
   }
-
+  
   #scoreboard {
     top: 10px;
     left: 10px;
     padding: 8px 12px;
-    font-size: 0.8rem;
+    max-width: 160px;
   }
-
-  #playerInfo {
-    bottom: 80px;
-    left: 10px;
-    font-size: 0.7rem;
-  }
-
+  
   #mobileControls {
     display: grid;
-    grid-template-areas:
-      ". up ."
-      "left . right"
-      ". down .";
+    bottom: 20px;
+    right: 20px;
   }
-
-  #upBtn { grid-area: up; }
-  #leftBtn { grid-area: left; }
-  #rightBtn { grid-area: right; }
-  #downBtn { grid-area: down; }
-
-  :root {
-    --car-size: 24px;
-    --star-size: 10px;
+  
+  .control-btn {
+    width: 50px;
+    height: 50px;
   }
 }
 
-/* Эффекты для игровых элементов */
-.star-glow {
-  filter: drop-shadow(0 0 5px gold);
-}
-
-.car-glow {
-  filter: drop-shadow(0 0 3px currentColor);
+/* Эффекты частиц */
+.particle {
+  position: absolute;
+  pointer-events: none;
+  z-index: 20;
 }
 
 /* Уведомления */
@@ -181,12 +262,40 @@ body {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background: rgba(255, 159, 28, 0.9);
+  background: rgba(46, 196, 182, 0.9);
   color: white;
-  padding: 15px 25px;
+  padding: 12px 24px;
   border-radius: 8px;
-  font-weight: bold;
-  z-index: 100;
+  font-weight: 700;
+  text-align: center;
+  box-shadow: var(--shadow-lg);
+  z-index: 200;
   opacity: 0;
-  transition: opacity 0.3s;
+  transition: opacity 0.3s, transform 0.3s;
+}
+
+.notification.show {
+  opacity: 1;
+  transform: translate(-50%, -60%);
+}
+
+/* Анимация сбора звезды */
+@keyframes collectStar {
+  0% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(3); opacity: 0; }
+}
+
+.star-collected {
+  animation: collectStar 0.5s forwards;
+}
+
+/* Дрифт-эффект */
+.drift-effect {
+  position: absolute;
+  width: 40px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  filter: blur(5px);
+  z-index: 8;
 }
